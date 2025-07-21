@@ -137,16 +137,6 @@ SCSFExport scsf_TradingSystemBasedOnLevelsAndAlertCondition(SCStudyInterfaceRef 
     sc.GetTradePosition(PositionData);
     bool CanTrade = PositionData.PositionQuantityWithAllWorkingOrders == 0;
 
-    SCString DebugMessage;
-    DebugMessage.Format("delta: %d, Level: %.2f, CanTrade: %s, IsLongEntry: %s, IsShortEntry: %s",
-        DeltaValue,
-        Level,
-        CanTrade ? "YES" : "NO",
-        IsLongEntry ? "YES" : "NO",
-        IsShortEntry ? "YES" : "NO"
-    );
-    sc.AddMessageToTradeServiceLog(DebugMessage, false);
-
     if (!CanTrade || (!IsLongEntry && !IsShortEntry))
         return;
 
