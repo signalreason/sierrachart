@@ -228,7 +228,8 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
 
     s_SCNewOrder NewOrder;
     NewOrder.OrderQuantity = sc.TradeWindowOrderQuantity;
-    NewOrder.OrderType = SCT_ORDERTYPE_MARKET;
+    NewOrder.OrderType = SCT_ORDERTYPE_LIMIT;
+    NewOrder.Price1 = Level;
     NewOrder.TextTag = "swing failure";
 
     int Result = 0;
