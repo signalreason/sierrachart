@@ -7,6 +7,7 @@ SCDLLName("SwingFailure")
 struct SwingLevelStore {
     double Levels[MAX_CROSSED_LEVELS];
     COLORREF Colors[MAX_CROSSED_LEVELS];
+    bool Traded[MAX_CROSSED_LEVELS];
     int Count = 0;
 };
 
@@ -122,6 +123,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
             if (Tool.Color == RGB(0,255,0) || Tool.Color == RGB(255,0,0)) {
                 swingLevels->Levels[swingLevels->Count] = Tool.BeginValue;
                 swingLevels->Colors[swingLevels->Count] = Tool.Color;
+                swingLevels->Traded[swingLevels->Count] = false;
                 swingLevels->Count++;
                 if (swingLevels->Count >= MAX_CROSSED_LEVELS)
                     break;
@@ -142,8 +144,10 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
     };
 
     auto ClearLevels = [&]() {
-        for (int i = 0; i < swingLevels->Count; ++i)
+        for (int i = 0; i < swingLevels->Count; ++i) {
             swingLevels->Levels[i] = 0.0;
+            swingLevels->Traded[i] = false;
+        }
         swingLevels->Count = 0;
     };
 
@@ -173,7 +177,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
 
     double Level = 0.0;
     COLORREF LevelColor = 0;
-    bool CrossedAnyLevel = false;
+    int TradedLevelIndex = -1;
     int EvaluatedIndex = sc.Index - 1;
     SCString DebugMessage;
     bool IsLongEntry = false;
@@ -182,7 +186,9 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
     double SignalLow = 0.0;
     double SignalClose = 0.0;
 
-    for (int i = 0; i < swingLevels->Count; ++i){
+    for (int i = 0; i < swingLevels->Count; ++i) {
+        if (swingLevels->Traded[i])
+            continue;
         Level = swingLevels->Levels[i];
         LevelColor = swingLevels->Colors[i];
         // Green = long only, Red = short only
@@ -196,6 +202,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
                 IsLongEntry = true;
                 SignalLow = low;
                 SignalClose = close;
+                TradedLevelIndex = i;
                 break;
             }
         } else if (LevelColor == RGB(255,0,0)) { // red
@@ -203,6 +210,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
                 IsShortEntry = true;
                 SignalHigh = high;
                 SignalClose = close;
+                TradedLevelIndex = i;
                 break;
             }
         }
@@ -225,19 +233,22 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
 
     int Result = 0;
 
-    if (IsLongEntry && LastTradedIndex < EvaluatedIndex)
+    if (TradedLevelIndex != -1 && LastTradedIndex < EvaluatedIndex)
     {
-        Result = sc.BuyEntry(NewOrder);
+        if (IsLongEntry)
+        {
+            Result = sc.BuyEntry(NewOrder);
+            Subgraph_BuyEntry[EvaluatedIndex] = 1;
+            Subgraph_SellEntry[EvaluatedIndex] = 0;
+        }
+        else if (IsShortEntry)
+        {
+            Result = sc.SellEntry(NewOrder);
+            Subgraph_BuyEntry[EvaluatedIndex] = 0;
+            Subgraph_SellEntry[EvaluatedIndex] = 1;
+        }
         LastTradedIndex = EvaluatedIndex;
-        Subgraph_BuyEntry[EvaluatedIndex] = 1;
-        Subgraph_SellEntry[EvaluatedIndex] = 0;
-    }
-    else if (IsShortEntry && LastTradedIndex < EvaluatedIndex)
-    {
-        Result = sc.SellEntry(NewOrder);
-        LastTradedIndex = EvaluatedIndex;
-        Subgraph_BuyEntry[EvaluatedIndex] = 0;
-        Subgraph_SellEntry[EvaluatedIndex] = 1;
+        swingLevels->Traded[TradedLevelIndex] = true;
     }
 
     if (Input_EnableDebuggingOutput.GetYesNo() && Result < 0)
