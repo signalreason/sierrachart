@@ -100,6 +100,9 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         LastTradedIndex = 1;
     }
 
+    if (sc.IsFullRecalculation || sc.DownloadingHistoricalData)
+        return;
+
     if (sc.MenuEventID == Input_ControlBarButtonNumber.GetInt())
     {
         const int ButtonState = (sc.PointerEventType == SC_ACS_BUTTON_ON) ? 1 : 0;
