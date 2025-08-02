@@ -20,7 +20,10 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
     SCInputRef Input_SendOrdersToTradeServiceButton = sc.Input[3];
     SCInputRef Input_ReloadLevelsButton = sc.Input[4];
     SCInputRef Input_SourceChart = sc.Input[5];
-    SCInputRef Input_EnableDebuggingOutput = sc.Input[6];
+    SCInputRef Input_BuyLevelColor = sc.Input[6];
+    SCInputRef Input_SellLevelColor = sc.Input[7];
+    SCInputRef Input_OrderType = sc.Input[8];
+    SCInputRef Input_EnableDebuggingOutput = sc.Input[9];
 
     SCSubgraphRef Subgraph_BuyEntry = sc.Subgraph[0];
     SCSubgraphRef Subgraph_SellEntry = sc.Subgraph[1];
@@ -50,6 +53,19 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         Input_SendOrdersToTradeServiceButton.Name = "Button # to toggle Send Orders to Trade Service";
         Input_SendOrdersToTradeServiceButton.SetInt(2);
         Input_SendOrdersToTradeServiceButton.SetIntLimits(1, MAX_ACS_CONTROL_BAR_BUTTONS);
+
+        // input to choose the color for buy levels
+        Input_BuyLevelColor.Name = "Buy Level Color";
+        Input_BuyLevelColor.SetColor(RGB(0, 255, 0));
+
+        // input to choose the color for sell levels
+        Input_SellLevelColor.Name = "Sell Level Color";
+        Input_SellLevelColor.SetColor(RGB(255, 0, 0));
+
+        // input to choose the order type for entries
+        Input_OrderType.Name = "Order Type for Entries";
+        Input_OrderType.SetCustomInputStrings("Market;Limit");
+        Input_OrderType.SetCustomInputIndex(0);  // Default to Market order
 
         Input_ReloadLevelsButton.Name = "Button # to reload levels from source chart";
         Input_ReloadLevelsButton.SetInt(3);
@@ -120,7 +136,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         while (sc.GetUserDrawnChartDrawing(chartNumber, DRAWING_HORIZONTAL_RAY, Tool, DrawingIndex) != 0)
         {
             // Only consider levels with color (ignore colorless)
-            if (Tool.Color == RGB(0,255,0) || Tool.Color == RGB(255,0,0)) {
+            if (Tool.Color == Input_BuyLevelColor.GetColor() || Tool.Color == Input_SellLevelColor.GetColor()) {
                 swingLevels->Levels[swingLevels->Count] = Tool.BeginValue;
                 swingLevels->Colors[swingLevels->Count] = Tool.Color;
                 swingLevels->Traded[swingLevels->Count] = false;
@@ -228,9 +244,14 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
 
     s_SCNewOrder NewOrder;
     NewOrder.OrderQuantity = sc.TradeWindowOrderQuantity;
-    NewOrder.OrderType = SCT_ORDERTYPE_LIMIT;
-    NewOrder.Price1 = Level;
+    NewOrder.OrderType = SCT_ORDERTYPE_MARKET;
     NewOrder.TextTag = "swing failure";
+
+    if (Input_OrderType.GetSelectedCustomString() == "Limit") // Limit order
+    {
+        NewOrder.OrderType = SCT_ORDERTYPE_LIMIT;
+        NewOrder.Price1 = Level;
+    }
 
     int Result = 0;
 
