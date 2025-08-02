@@ -65,7 +65,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         // input to choose the order type for entries
         Input_OrderType.Name = "Order Type for Entries";
         Input_OrderType.SetCustomInputStrings("Market;Limit");
-        Input_OrderType.SetCustomInputIndex(0);  // Default to Market order
+        Input_OrderType.SetCustomInputIndex(1);  // Default to Limit order
 
         Input_ReloadLevelsButton.Name = "Button # to reload levels from source chart";
         Input_ReloadLevelsButton.SetInt(3);
