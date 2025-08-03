@@ -81,10 +81,12 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         Subgraph_BuyEntry.Name = "Buy";
         Subgraph_BuyEntry.DrawStyle = DRAWSTYLE_POINT_ON_LOW;
         Subgraph_BuyEntry.LineWidth = 5;
+        Subgraph_BuyEntry.PrimaryColor = RGB(0, 255, 0);
 
         Subgraph_SellEntry.Name = "Sell";
         Subgraph_SellEntry.DrawStyle = DRAWSTYLE_POINT_ON_HIGH;
         Subgraph_SellEntry.LineWidth = 5;
+        Subgraph_SellEntry.PrimaryColor = RGB(255, 0, 0);
 
         return;
     }
@@ -124,6 +126,9 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
 
     if (!Input_Enabled.GetYesNo() || sc.Index == 0)
         return;
+
+    Subgraph_BuyEntry.PrimaryColor = Input_BuyLevelColor.GetColor();
+    Subgraph_SellEntry.PrimaryColor = Input_SellLevelColor.GetColor();
 
     SwingLevelStore* swingLevels = (SwingLevelStore*)sc.GetPersistentPointer(2);
     if (swingLevels == nullptr)
@@ -216,7 +221,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
         double high = sc.High[EvaluatedIndex];
         double low = sc.Low[EvaluatedIndex];
         double close = sc.Close[EvaluatedIndex];
-        if (LevelColor == RGB(0,255,0)) { // green
+        if (LevelColor == Input_BuyLevelColor.GetColor()) { // green
             if (low < Level && close > Level) {
                 IsLongEntry = true;
                 SignalLow = low;
@@ -224,7 +229,7 @@ SCSFExport scsf_SwingFailure(SCStudyInterfaceRef sc)
                 TradedLevelIndex = i;
                 break;
             }
-        } else if (LevelColor == RGB(255,0,0)) { // red
+        } else if (LevelColor == Input_SellLevelColor.GetColor()) { // red
             if (high > Level && close < Level) {
                 IsShortEntry = true;
                 SignalHigh = high;
